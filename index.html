@@ -451,9 +451,27 @@
     const progressFill = document.querySelector("#progress-fill");
     const progressBar = document.querySelector('[role="progressbar"]');
     const nextButton = document.querySelector("#next-button");
+    const maxAnswers = Math.max(...questions.map(question => question.answers.length));
+    const answerButtons = [];
     let questionIndex = 0;
     let score = 0;
     let answered = false;
+
+    function buildAnswerButtons() {
+      const fragment = document.createDocumentFragment();
+      for (let index = 0; index < maxAnswers; index += 1) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "answer";
+        button.dataset.index = index;
+        button.innerHTML = '<span class="answer-letter"></span><span class="answer-text"></span>';
+        button.querySelector(".answer-letter").textContent = String.fromCharCode(65 + index);
+        button.addEventListener("click", () => selectAnswer(index));
+        answerButtons.push(button);
+        fragment.appendChild(button);
+      }
+      answersEl.appendChild(fragment);
+    }
 
     function renderQuestion() {
       const current = questions[questionIndex];
@@ -468,16 +486,17 @@
       feedbackEl.className = "feedback";
       nextButton.disabled = true;
       nextButton.innerHTML = 'Lock in answer <span aria-hidden="true">→</span>';
-      answersEl.replaceChildren(...current.answers.map((answer, index) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "answer";
+
+      answerButtons.forEach((button, index) => {
+        const isVisible = index < current.answers.length;
+        button.style.display = isVisible ? "" : "none";
+        button.disabled = false;
+        button.classList.remove("correct", "wrong", "reveal-correct");
         button.dataset.index = index;
-        button.innerHTML = `<span class="answer-letter">${String.fromCharCode(65 + index)}</span><span class="answer-text"></span>`;
-        button.querySelector(".answer-text").textContent = answer;
-        button.addEventListener("click", () => selectAnswer(index));
-        return button;
-      }));
+        if (isVisible) {
+          button.querySelector(".answer-text").textContent = current.answers[index];
+        }
+      });
       questionEl.focus({ preventScroll: true });
     }
 
